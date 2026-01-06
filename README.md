@@ -31,9 +31,6 @@ tasks of this tool are therefore
  2. Provide a means to specify an expression in these functions
  3. Determine the dependencies and render the DAG
 
-At present the specification is done as a [TOML](https://toml.io/en/) file, but this is subject
-to change.
-
 From the core idea other inspiration came from these notes on [parallelizing for HTCondor ](https://github.com/SyracuseUniversity/OrangeGridExamples/tree/main/Parallelism).
 In particular, the inclusion of the `map` operator came from this document, and `reduce` is planned.
 
@@ -79,7 +76,40 @@ standard out, and all input is provided by naming files to read on the command
 line.  One eventual goal is to include other options.
 
 
-## The configuration file
+## The language specification
+
+A simple configuration might look like this
+
+```
+def f(a,b) = "f.sh -a $(a) $(b)"
+def g(a,b) = "g.sh --a $(a) --b $(b)" => (x=$(a), y=$(b/txt/out/))
+def h(a)   = "h.sh $(a)"
+
+a(h("result.dat"),map(g.y(5,_),["first.txt","second.txt","third.txt"]))
+```
+
+The first and third lines define functions `f` and `h` that each take two arguments and only write to standard out.
+
+The second likewise defines `g`, but this produces three outputs, standard out, a file whose name is the argument
+passed in as `a`, and a file whose name is the second argument but with the extension `txt` replaced with `out`.
+
+The last line defines the workflow:
+
+  * Run `h(12)`, producing standard out (written to a file whose name is programmatically generated)
+  * Run `g(5,"first.txt")` producing standard out and files named `first.txt` and `first.out`.
+    * The syntax `g.y` means the output identified as `y` is used as the return value and fed into the input parameter of the calling function
+    * Likewise run the other two instances
+
+As an evaluation the steps can be considered as:
+
+  * Evalutate `h` reducing the expression to `f("result.dat",map(g.y(5,_),["first.txt","second.txt","third.txt"]))`
+  * Evaluate the three `g`s reducing the expresison to `f("result.dat",["first.out","second.out","third.out"])`
+  * Finally evaluate `f` by calling `f.sh -a result.dat -b first.out second.out third.out`
+
+
+## Old syntax
+
+(This section will be removed once the new sytax is fully implemented)
 
 Again, as an example consider the python expression
 
@@ -155,6 +185,8 @@ which operates correctly and is rendered as
 
   * The script works and produces a working dag given the constraints noted previously
   * The code is absolutely hideous and should be considered a proof-of-concept demo.  It likely needs a near complete rewrite.
+  * The parser is able to process expressions, definitions are not yet complete.  Translation to DAG is not implemented yet, but the hope is
+    that the existing implementation can largely be reused.
 
 ## Future plans
 
@@ -167,13 +199,5 @@ which operates correctly and is rendered as
   * Add additional wiring types.
     * Up next, if program a takes an output file name as an argument it should be possible to pass that as the name of an
       input file to a program that depends on it.
-
-## Questions
-
-  * The TOML expression feels clunky, would json or yaml be any better?
-  * Or should the code just parse Python-style expression directly?
-  * The big question: Is this actually useful?  We don't have many people using dags.  Despite what the introduction said
-    maybe this *could* replace Snakemake in some cases?  That would be a win as Snakemake is a little hard on cluster and
-    head nodes.
 
 
