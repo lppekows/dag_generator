@@ -107,44 +107,6 @@ As an evaluation the steps can be considered as:
   * Finally evaluate `f` by calling `f.sh -a result.dat -b first.out second.out third.out`
 
 
-## Old syntax
-
-(This section will be removed once the new sytax is fully implemented)
-
-Again, as an example consider the python expression
-
-```python
-f(10, [g(x) for x in range(5)], h(12))
-```
-
-The TOML file that defines these functions and this call is
-
-```toml
-
-[f]
-inputs     = ["[a:filename]", "b:filename", "c:int"]
-invocation = "f.sh -c $c -b $b -a $a"
-
-[g]
-inputs     = ["a:int"]
-invocation = "g.sh $a"
-
-[h]
-inputs     = ["a:int"]
-invocation = "h.sh $a"
-
-[main]
-function          = "f"
-a.map.function    = "g"
-a.map.a.value     = [1,2,3]
-b.function        = "h"
-b.a.value         = 12
-c.value           = 85
-```
-
-The `inputs` line is not currently used, it's present with an eye towards future development.
-
-
 ## Generated results
 
 The generated submit file for `f` is
@@ -183,10 +145,10 @@ which operates correctly and is rendered as
 
 ## Status
 
-  * The script works and produces a working dag given the constraints noted previously
-  * The code is absolutely hideous and should be considered a proof-of-concept demo.  It likely needs a near complete rewrite.
-  * The parser is able to process expressions, definitions are not yet complete.  Translation to DAG is not implemented yet, but the hope is
-    that the existing implementation can largely be reused.
+  * Complete rewrite!  The project has switched to using [Lark](https://github.com/lark-parser/lark), a powerful parser generator.
+  * The syntax is captured in [Backus–Naur form](https://en.wikipedia.org/wiki/Backus%E2%80%93Naur_form) in [dags.bnf](dags.bnf) and is
+    processed in [dag_generatorV2.py](dag_degneratorV2.py).
+  * The parser can injest the full language and simplify the internal representation, it does not yet output the DAG.
 
 ## Future plans
 
