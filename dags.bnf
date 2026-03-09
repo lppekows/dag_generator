@@ -1,0 +1,20 @@
+value: definition* expression
+
+definition: "def" var arglist "=" ( ESCAPED_STRING | ESCAPED_STRING "=>" output_list )
+
+output_list: output_expression ("," output_expression)*
+
+output_expression: var "=" ESCAPED_STRING
+
+arglist: "(" [var ("," var)*] ")" 
+
+var: CNAME
+
+expression: SIGNED_NUMBER
+    | var "(" [expression ("," expression)*] ")" 
+
+%import common.CNAME
+%import common.ESCAPED_STRING
+%import common.SIGNED_NUMBER
+%import common.WS
+%ignore WS

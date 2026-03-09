@@ -1,0 +1,6 @@
+def f(a,b) = "f.py -a $a -b $b"
+
+def g(x,y) = "g.py -x $x" => a="$x.fun", b="$y/dat/out"
+
+f(1,g(2,4))
+
