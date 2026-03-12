@@ -76,13 +76,61 @@ standard out, and all input is provided by naming files to read on the command
 line.  One eventual goal is to include other options.
 
 
-## The language specification
+## Building up the language specification, and current status
 
-A simple configuration might look like this
+Here's an example of a simple program:
 
 ```
-def f(a,b) = "f.sh -a $(a) $(b)"
-def g(a,b) = "g.sh --a $(a) --b $(b)" => (x=$(a), y=$(b/txt/out/))
+def f(a,b) = "f.sh -a $a $b"
+def g(a,b) = "g.sh --a $a --b $b"
+def h(a)   = "h.sh $a"
+
+f(g(2,3),h(4))
+```
+
+This defines three functions.  The last line defines the workflow:
+
+  * Run `h(4)`, producing standard out (written to a file whose name is programmatically generated)
+  * In parallel run `g(2,3)` producing standard out (written to a file whose name is programmatically generated)
+  * Once both have completed, run `f` setting `a` to be the name of the output file from the first step and `b` to the be the name of the output file from the second.
+ 
+
+STATUS: This is currently implemented.
+
+### Output variables
+
+As the next step imagine that `g` writes its results not to standard out, but to a file specified by the argument `a`.  This is handled by
+introducing output variables.
+
+```
+def f(a,b) = "f.sh -a $a $b" 
+def g(a,b) = "g.sh --a $a --b $b" => (out1 = $a)
+def h(a)   = "h.sh $a"
+
+f(g.out1(2,3),h(4))
+```
+
+The definition of `g` should be read as "producing out1 from 1."  The call to `g` in the final expression needs to 
+specify which output should be used, this is done by adding `.out1` to the function call.
+
+Sometimes a program will create an output file based on the name of an input file, for example it might take in 
+a file called `data.in` and produce `data.out`.  This substitution is specified with a sed-like syntax
+
+```
+def g(a,b) = "g.sh --a $a --b $b" => (x=$a, y=$b/in/out/)
+```
+
+STATUS: Next to be implemented
+
+
+### Map
+
+A very common scenario will involve iterating some process over a list of values, this is done with the
+map function:
+
+```
+def f(a,b) = "f.sh -a $a $b"
+def g(a,b) = "g.sh --a $a --b $b" => (x=$a, y=$b/in/out/)
 def h(a)   = "h.sh $(a)"
 
 a(h("result.dat"),map(g.y(5,_),["first.txt","second.txt","third.txt"]))
@@ -107,9 +155,12 @@ As an evaluation the steps can be considered as:
   * Finally evaluate `f` by calling `f.sh -a result.dat -b first.out second.out third.out`
 
 
-## Generated results
+STATUS: There may still be some syntactic or implimentation details to think through.
 
-The generated submit file for `f` is
+
+## Generated files
+
+In the final example the generated submit file for `f` is
 
 ```
 executable = f.sh
