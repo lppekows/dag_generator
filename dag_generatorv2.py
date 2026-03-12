@@ -90,7 +90,7 @@ class Dag():
         print(f"JOB {self.id} {self.function.name}.dag")
         print(f"VARS {self.id} {assignments}")
         if len(my_parents):
-            print(f"PARENT {' '.join(my_parents)} CHILD {self.id}")  # other way around, innit?
+            print(f"PARENT {' '.join(my_parents)} CHILD {self.id}") 
         print()
 
 
