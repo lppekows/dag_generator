@@ -13,6 +13,30 @@ class Definition():
         self.arguments  = [a[0] == '$' and f'$({a[1:]})' or a for a in self.invocation[1:]]
         self.argLine    = self.arguments and f"arguments = {' '.join(self.arguments)}" or ""
 
+    def resolve(self,outVar,inVars):
+        expr = self.output_expression[outVar]
+        
+        # is it of the form $a/foo/bar?
+        subst = expr.split('/')
+
+        if len(subst) == 3:
+            var = subst[0][1:]
+
+            for k,v in zip(self.parameters,inVars):
+                if k == var:
+                    ret = v.replace(subst[1],subst[2])
+        else:
+            # must be $a.foo
+            subst = expr.split('.')
+            var   = subst[0][1:]
+
+            for k,v in zip(self.parameters,inVars):
+                if k == var:
+                    ret = f"{v}.{subst[1]}"
+
+            
+        return ret
+    
     def eval(self, arguments, environment):
         id      = self.name in environment and environment[self.name] + 1 or 0
         new_env = {k:v for k,v in environment.items() if k != self.name}
@@ -52,13 +76,23 @@ class Program():
 class Dag():
     def __init__(self,expression,functions):
         self.functions = functions
-        self.function  = functions[expression.fname]
+
+        components     = expression.fname.split('.')
+        basename       = components[0]
+        self.outvar    = None
+        
+        if len(components) > 1:
+            self.outvar = components[1]
+            
+        self.function  = functions[basename]
         self.args      = []
         self.id        = 0
     
         for arg in expression.args:
             if isinstance(arg,Expression):
                 self.args.append(Dag(arg,functions))
+            elif isinstance(arg[0],str):
+                self.args.append(arg[0].replace('"',''))
             else:
                 self.args.append(arg[0])
                 
@@ -69,6 +103,12 @@ class Dag():
         self.id = id
         return id+1
 
+    def outputExpression(self):
+        if self.outvar:
+            return self.function.resolve(self.outvar,self.args)
+        else:
+            return f"{self.id}"
+        
     def render(self):
         for f in self.functions.values():
             f.write_submit_file()
@@ -80,11 +120,10 @@ class Dag():
             if isinstance(arg,Dag):
                 arg.render()
                 my_parents.append(str(arg.id))
-                parameters.append(f"{arg.id}.out")
+                parameters.append(arg.outputExpression())
             else:
                 parameters.append(f"{arg}")
 
-            
         assignments = " ".join([f'{var}="{val}"' for var,val in zip(self.function.parameters,parameters)])
         assignments = f'outname="{self.id}" ' + assignments
         print(f"JOB {self.id} {self.function.name}.dag")
@@ -118,24 +157,40 @@ class DagTransformer(Transformer):
         else:
             name, params, invocation, output = items
             return Definition(name, params, invocation, output)
+
     def arglist(self, items):
         return list(items)
+
     def expression(self, expr):
         if len(expr) > 1:
             return Expression(expr[0],expr[1:])
         else:
             return expr
+
     def string(self, s):
         (s,) = s
         return s[1:-1]
-    def SIGNED_NUMBER(self, n):
-        return int(n)
 
     def var(self, s):
         (s,) = s
         return s
 
+    def qualified_var(self,s):
+        return '.'.join(s)
+
+    def output_list(self, s):
+        return {v[0]:v[1].replace('"','') for v in s}
+            
+    def output_expression(self,s):
+        return s
+
+    def SIGNED_NUMBER(self, n):
+        return int(n)
+    
     def CNAME(self, s):
+        return str(s)
+
+    def ESCAPED_STRING(self, s):
         return str(s)
 
 

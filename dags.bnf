@@ -11,10 +11,13 @@ arglist: "(" [var ("," var)*] ")"
 var: CNAME
 
 expression: SIGNED_NUMBER
-    | var "(" [expression ("," expression)*] ")" 
+    | ESCAPED_STRING
+    | qualified_var "(" [expression ("," expression)*] ")" 
+
+qualified_var: var | var "." var 
 
 %import common.CNAME
-%import common.ESCAPED_STRING
 %import common.SIGNED_NUMBER
+%import common.ESCAPED_STRING
 %import common.WS
 %ignore WS
