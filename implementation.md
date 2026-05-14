@@ -62,7 +62,7 @@ resulting code is very simple, needing less than a page of Python and (2)
 modifying this basic core is easy, which will play a key role in what follows.
 For a lovely talk discussing both these features, see William Byrd's talk on
 [The Most Beautiful Program in the
-World](https://www.youtube.com/watch?v=OyfBQmvr2Hc)
+World](https://www.youtube.com/watch?v=OyfBQmvr2Hc).
 
 The next question to ask is, if we are going to treat these expressions as real
 functions what are the input and output types?  Consider a sample definition and
@@ -110,7 +110,7 @@ implement, if the functions themselves return *enhanced* or *decorated* results,
 that is, both the resulting value and the necessary data to construct the dag.
 
 As a side note, this is closely related to the idea of a 
-[kleisli category)[https://www.youtube.com/watch?v=i9CU4CuHADQ], which
+[kleisli category](https://www.youtube.com/watch?v=i9CU4CuHADQ), which
 is also related to *monads*.  The classic example of which is is to enhance
 the returned value of a function with a logging message.  This is described
 in many places, but a good reference starts
