@@ -1,6 +1,15 @@
 def f(a,b) = "f.py -a $a -b $b"
 
-def g(x,y) = "g.py -x $x" => a="$x.fun", b="$y/dat/out"
+# Produces three output files
+# stdout: captured by Condor
+# x.tmp
+# y.out
+def g(x,y) = "g.py -x $x -infile $y" => a="$x.tmp", b="$y/dat/out"
 
+# Calls f.py -a 1 -b (stdout file from g)
+f(1,g(2,"infile.dat"))
+
+
+# Calls f.py -a 1 -b infile.out
 f(1,g.b(2,"infile.dat"))
 
